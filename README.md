@@ -1,1 +1,1 @@
-# JHipster_MSA
+# a book management system
