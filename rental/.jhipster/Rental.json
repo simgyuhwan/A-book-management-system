@@ -1,0 +1,29 @@
+{
+  "applications": "*",
+  "changelogDate": "20230612054600",
+  "clientRootFolder": "rental",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "entityTableName": "rental",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "userId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "rentalStatus",
+      "fieldType": "RentalStatus",
+      "fieldValues": "RENT_AVAILABLE,RENT_UNAVAILABLE"
+    }
+  ],
+  "microserviceName": "rental",
+  "name": "Rental",
+  "pagination": "pagination",
+  "relationships": [],
+  "searchEngine": "no",
+  "service": "serviceImpl"
+}
