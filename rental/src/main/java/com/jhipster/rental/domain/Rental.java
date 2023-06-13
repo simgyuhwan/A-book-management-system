@@ -3,6 +3,7 @@ package com.jhipster.rental.domain;
 import com.jhipster.rental.domain.enumeration.RentalStatus;
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,7 +52,7 @@ public class Rental implements Serializable {
      */
     @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-    private Set<RentalItem> rentedItems = new HashSet<>();
+    private Set<RentedItem> rentedItems = new HashSet<>();
 
     /**
      * 연체 아이템
@@ -66,6 +67,61 @@ public class Rental implements Serializable {
     @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     private Set<ReturnedItem> returnedItems = new HashSet<>();
+
+    // Rental 엔티티 생성
+    public static Rental createRental(Long userId) {
+        Rental rental = new Rental();
+        rental.setUserId(userId); // Rental에 사용자 일련번호 부여
+        rental.setRentalStatus(RentalStatus.RENT_AVAILABLE); // 대출 가능
+        rental.setLateFee(0L); // 연체료 초기화
+        return rental;
+    }
+
+    // 대출 가능 여부 체크
+    public boolean checkRentalAvailable() throws Exception {
+        if(this.rentalStatus.equals(RentalStatus.RENT_UNAVAILABLE) || this.getLateFee() != 0) {
+            throw new RentUnavailableException("연체 상태입니다. 연체료를 정산 후, 도서를 대출하실 수 있습니다.");
+        }
+
+        if(this.getRentedItems().size() >= 5) {
+            throw new RentUnavailableException("대출 가능한 도서의 수는 " + (5 - this.getRentedItems().size()) + "권 입니다.");
+        }
+        return true;
+    }
+
+    // 대출 처리 메서드
+    public Rental rentBook(Long bookId, String title) {
+        this.addRentedItem(RentedItem.createRentedItem(bookId, title, LocalDate.now()));
+        return this;
+    }
+
+    // 반납 처리 메서드
+    public Rental returnBook(Long bookId) {
+        RentedItem rentedItem = this.rentedItems
+            .stream()
+            .filter(item -> item.getBookId().equals(bookId)).findFirst().get();
+        this.addReturnedItem(ReturnedItem.createReturnedItem(
+            rentedItem.getBookId(), rentedItem.getBookTitle(), LocalDate.now()
+        ));
+        this.removeRentedItem(rentedItem);
+        return this;
+    }
+
+    public void addReturnedItem(ReturnedItem returnedItem) {
+        this.returnedItems.add(returnedItem);
+    }
+
+    public void addRentedItem(RentedItem RentedItem) {
+        this.rentedItems.add(RentedItem);
+    }
+
+    public void removeRentedItem(RentedItem rentedItem) {
+        this.rentedItems.remove(rentedItem);
+    }
+
+    public Set<RentedItem> getRentedItems() {
+        return rentedItems;
+    }
 
     public Long getId() {
         return this.id;
@@ -109,7 +165,10 @@ public class Rental implements Serializable {
     public Long getLateFee() {
         return this.lateFee;
     }
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
+
+    public void setLateFee(Long lateFee) {
+        this.lateFee = lateFee;
+    }
 
     @Override
     public boolean equals(Object o) {
