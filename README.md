@@ -82,3 +82,9 @@
 | 요청 예시     | http://localhost:8080/rentals/5/overdueItem/10001                                                         |
 | 응답 결과     | 정상 처리시 도서대출정보를 반환<br>_ Rental 일련번호<br>_ 사용자 일련번호<br>_ 대출 가능 여부<br>_ 연체료 |
 | 응답 예시     | {“id” : 1, “userId” : 5, “rentalStatus” : “RENT_UNAVAILABLE”, “lateFee” : 30}                             |
+
+<br>
+
+## 도메인 모델링
+
+![대출 모델링](./images/domain-modeling-rental.png)
