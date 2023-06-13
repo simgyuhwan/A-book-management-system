@@ -3,34 +3,69 @@ package com.jhipster.rental.domain;
 import com.jhipster.rental.domain.enumeration.RentalStatus;
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 /**
- * A Rental.
+ * A Rental 애그리거트 루트, 앤티티 클래스
  */
 @Entity
 @Table(name = "rental")
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 @SuppressWarnings("common-java:DuplicatedBlocks")
 public class Rental implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Rental 일련번호
+     */
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
-    @SequenceGenerator(name = "sequenceGenerator")
-    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * 사용자 일련번호(사용자 식별값)
+     */
     @Column(name = "user_id")
     private Long userId;
 
+    /**
+     * 대춮 가능 여부
+     */
     @Enumerated(EnumType.STRING)
     @Column(name = "rental_status")
     private RentalStatus rentalStatus;
 
-    // jhipster-needle-entity-add-field - JHipster will add fields here
+    /**
+     * 연체료
+     */
+    @Column(name = "late_fee")
+    private Long lateFee;
+
+    /**
+     * 대출 아이템
+     */
+    @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<RentalItem> rentedItems = new HashSet<>();
+
+    /**
+     * 연체 아이템
+     */
+    @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<OverdueItem> overdueItems = new HashSet<>();
+
+    /**
+     * 반납 아이템
+     */
+    @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<ReturnedItem> returnedItems = new HashSet<>();
 
     public Long getId() {
         return this.id;
@@ -71,6 +106,9 @@ public class Rental implements Serializable {
         this.rentalStatus = rentalStatus;
     }
 
+    public Long getLateFee() {
+        return this.lateFee;
+    }
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
