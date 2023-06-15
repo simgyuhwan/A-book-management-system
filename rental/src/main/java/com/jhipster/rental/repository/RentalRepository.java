@@ -1,5 +1,7 @@
 package com.jhipster.rental.repository;
 
+import java.util.Optional;
+
 import com.jhipster.rental.domain.Rental;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
@@ -11,5 +13,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RentalRepository extends JpaRepository<Rental, Long> {
 
-    Rental findByUserId(Long userId);
+    Optional<Rental> findByUserId(Long userId);
 }

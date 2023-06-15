@@ -36,7 +36,7 @@ public class RentalServiceImpl implements RentalService {
      */
     @Override
     public Rental rentBook(Long userId, Long bookId, String bookTitle) {
-        Rental rental = rentalRepository.findByUserId(userId);
+        Rental rental = rentalRepository.findByUserId(userId).get();
         rental.checkRentalAvailable(); // 대출 가능 상태 확인
         rental = rental.rentBook(bookId, bookTitle); // Rental 에 대출처리 위임
         rentalRepository.save(rental);
@@ -58,7 +58,7 @@ public class RentalServiceImpl implements RentalService {
      */
     @Override
     public Rental returnBooks(Long userId, Long bookId) {
-        Rental rental = rentalRepository.findByUserId(userId);
+        Rental rental = rentalRepository.findByUserId(userId).get();
         rental = rental.returnBook(bookId);
         rentalRepository.save(rental);
 
