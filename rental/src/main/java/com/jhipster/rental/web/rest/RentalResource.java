@@ -47,6 +47,19 @@ public class RentalResource {
     }
 
     /**
+     * 도서 대출 API
+     *
+     * @param userid
+     * @param bookId
+     * @return
+     */
+    @PostMapping("/rentals/{userid}/RentedItem/{book}")
+    public ResponseEntity<RentalDTO> rentBook(@PathVariable("userid") Long userid, @PathVariable("book") Long bookId) {
+        // 도서 서비스를 호출해 도서 정보 가져오기
+
+    }
+
+    /**
      * {@code POST  /rentals} : Create a new rental.
      *
      * @param rentalDTO the rentalDTO to create.
