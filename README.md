@@ -88,3 +88,256 @@
 ## 도메인 모델링
 
 ![대출 모델링](./images/domain-modeling-rental.png)
+
+<br>
+
+### Rental(도메인 객체)
+
+```java
+/**
+ * A Rental 애그리거트 루트, 앤티티 클래스
+ */
+@Entity
+@Table(name = "rental")
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@SuppressWarnings("common-java:DuplicatedBlocks")
+public class Rental implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Rental 일련번호
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * 사용자 일련번호(사용자 식별값)
+     */
+    @Column(name = "user_id")
+    private Long userId;
+
+    /**
+     * 대 가능 여부
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rental_status")
+    private RentalStatus rentalStatus;
+
+    /**
+     * 연체료
+     */
+    @Column(name = "late_fee")
+    private Long lateFee;
+
+    /**
+     * 대출 아이템
+     */
+    @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<RentedItem> rentedItems = new HashSet<>();
+
+    /**
+     * 연체 아이템
+     */
+    @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<OverdueItem> overdueItems = new HashSet<>();
+
+    /**
+     * 반납 아이템
+     */
+    @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    private Set<ReturnedItem> returnedItems = new HashSet<>();
+
+    // Rental 엔티티 생성
+    public static Rental createRental(Long userId) {
+        Rental rental = new Rental();
+        rental.setUserId(userId); // Rental에 사용자 일련번호 부여
+        rental.setRentalStatus(RentalStatus.RENT_AVAILABLE); // 대출 가능
+        rental.setLateFee(0L); // 연체료 초기화
+        return rental;
+    }
+
+    // 대출 가능 여부 체크
+    public boolean checkRentalAvailable() throws Exception {
+        if(this.rentalStatus.equals(RentalStatus.RENT_UNAVAILABLE) || this.getLateFee() != 0) {
+            throw new RentUnavailableException("연체 상태입니다. 연체료를 정산 후, 도서를 대출하실 수 있습니다.");
+        }
+
+        if(this.getRentedItems().size() >= 5) {
+            throw new RentUnavailableException("대출 가능한 도서의 수는 " + (5 - this.getRentedItems().size()) + "권 입니다.");
+        }
+        return true;
+    }
+
+    // 대출 처리 메서드
+    public Rental rentBook(Long bookId, String title) {
+        this.addRentedItem(RentedItem.createRentedItem(bookId, title, LocalDate.now()));
+        return this;
+    }
+
+    // 반납 처리 메서드
+    public Rental returnBook(Long bookId) {
+        RentedItem rentedItem = this.rentedItems
+            .stream()
+            .filter(item -> item.getBookId().equals(bookId)).findFirst().get();
+        this.addReturnedItem(ReturnedItem.createReturnedItem(
+            rentedItem.getBookId(), rentedItem.getBookTitle(), LocalDate.now()
+        ));
+        this.removeRentedItem(rentedItem);
+        return this;
+    }
+```
+
+### RentedItem(대출아이템)
+
+```java
+/**
+ * 대출 아이템
+ */
+@Entity
+@Table(name = "rented_item")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@SuppressWarnings("common-java:DuplicatedBlocks")
+public class RentedItem implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 대출아이템 일련번호
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * 대출한 재고 도서 일련번호(도서 서비스에서 발행한 번호)
+     */
+    @Column(name = "book_id")
+    private Long bookId;
+
+    /**
+     * 대출 시작일자
+     */
+    @Column(name = "rented_date")
+    private LocalDate rentedDate;
+
+    /**
+     * 반납 예정일자
+     */
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    /**
+     * 대출한 도서명
+     */
+    @Column(name = "book_title")
+    private String bookTitle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("rentedItems")
+    private Rental rental;
+
+    // 대출 아이템을 생성하는 메서드
+    public static RentedItem createRentedItem(Long bookId, String bookTitle, LocalDate rentedDate) {
+        RentedItem rentedItem = new RentedItem();
+        rentedItem.setBookId(bookId);
+        rentedItem.setBookTitle(bookTitle);
+        rentedItem.setRentedDate(rentedDate);
+        rentedItem.setDueDate(rentedDate.plusWeeks(2));
+        return rentedItem;
+    }
+```
+
+### OverdueItem
+
+```java
+/**
+ * 연체아이템
+ */
+@Entity
+@Table(name = "overdue_item")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+public class OverdueItem {
+
+    /**
+     * 연체아이템 일련번호
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * 대출한 재고 도서 일련번호(도서 서비스에서 발행한 번호)
+     */
+    @Column(name = "book_id")
+    private Long bookId;
+
+    /**
+     * 반납 예정일자
+     */
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    /**
+     * 대출한 도서명
+     */
+    @Column(name = "book_title")
+    private String bookTitle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Rental rental;
+```
+
+### ReturnedItem(반납아이템)
+
+```java
+/**
+ * 반납 아이템
+ */
+@Entity
+@Table(name = "returned_item")
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+public class ReturnedItem {
+
+    /**
+     * 반납아이템 일련번호
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * 반납한 재고 도서 일련번호(도서 서비스에서 발행한 재고 도서 일련번호)
+     */
+    @Column(name = "book_id")
+    private Long bookId;
+
+    /**
+     * 반납 일자
+     */
+    @Column(name = "returned_date")
+    private LocalDate returnedDate;
+
+    /**
+     * 반납 도서명
+     */
+    @Column(name = "book_title")
+    private String bookTitle;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Rental rental;
+
+    public static ReturnedItem createReturnedItem(Long bookId, String bookTitle, LocalDate now) {
+        ReturnedItem returnedItem = new ReturnedItem();
+        returnedItem.setBookId(bookId);
+        returnedItem.setBookTitle(bookTitle);
+        returnedItem.setReturnedDate(now);
+        return returnedItem;
+    }
+
+}
+```
