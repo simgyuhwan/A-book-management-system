@@ -9,7 +9,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * A RentedItem.
+ * 대출 아이템
  */
 @Entity
 @Table(name = "rented_item")

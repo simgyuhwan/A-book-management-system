@@ -14,6 +14,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+/**
+ * 반납 아이템
+ */
 @Entity
 @Table(name = "returned_item")
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
