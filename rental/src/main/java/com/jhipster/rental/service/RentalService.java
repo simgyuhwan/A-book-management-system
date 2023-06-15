@@ -1,5 +1,6 @@
 package com.jhipster.rental.service;
 
+import com.jhipster.rental.domain.Rental;
 import com.jhipster.rental.service.dto.RentalDTO;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -9,6 +10,26 @@ import org.springframework.data.domain.Pageable;
  * Service Interface for managing {@link com.jhipster.rental.domain.Rental}.
  */
 public interface RentalService {
+
+    /**
+     * 도서 대출
+     *
+     * @param userId 사용자 일련번호
+     * @param bookId 책 일련번호
+     * @param bookTitle 책 제목
+     * @return 대출 도메인 객체
+     */
+    Rental rentBook(Long userId, Long bookId, String bookTitle);
+
+    /**
+     * 도서 반납
+     *
+     * @param userId 사용자 일련번호
+     * @param bookId 책 일련번호
+     * @return 대출 도메인 객체
+     */
+    Rental returnBooks(Long userId, Long bookId);
+
     /**
      * Save a rental.
      *

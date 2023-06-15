@@ -31,6 +31,46 @@ public class RentalServiceImpl implements RentalService {
         this.rentalMapper = rentalMapper;
     }
 
+    /**
+     * 도서 대출 처리 구현
+     */
+    @Override
+    public Rental rentBook(Long userId, Long bookId, String bookTitle) {
+        Rental rental = rentalRepository.findByUserId(userId);
+        rental.checkRentalAvailable(); // 대출 가능 상태 확인
+        rental = rental.rentBook(bookId, bookTitle); // Rental 에 대출처리 위임
+        rentalRepository.save(rental);
+
+        // 도서 서비스에 도서재고 감소를 위해 도서대출 이벤트 발송
+        rentalProducer.updateBookStatus(bookId, "UNAVAILABLE");
+
+        // 도서 카탈로그 서비스에 대출된 도서로 상태를 변경하기 위한 이벤트 발송
+        rentalProducer.updateBookCatalog(bookId, "RENT_BOOK");
+
+        // 대출로 인한 사용자 포인트 적립을 위해 사용자 서비스에 이벤트 발송
+        rentalProducer.savePoints(userId);
+
+        return rental;
+    }
+
+    /**
+     * 도서 반납 구현
+     */
+    @Override
+    public Rental returnBooks(Long userId, Long bookId) {
+        Rental rental = rentalRepository.findByUserId(userId);
+        rental = rental.returnBook(bookId);
+        rentalRepository.save(rental);
+
+        // 도서 서비스에 도서재고 증가를 위해 도서반납 이벤트 발송
+        retenProducer.updateBookStatus(bookId, "AVAILABLE");
+
+        // 도서 카탈로그 서비스에 대출 가능한 도서로 상태를 변경하기 위한 이벤트 발송
+        rentalProducer.updateBookCatalog(bookId, "RETURN_BOOK");
+
+        return rental;
+    }
+
     @Override
     public RentalDTO save(RentalDTO rentalDTO) {
         log.debug("Request to save Rental : {}", rentalDTO);
