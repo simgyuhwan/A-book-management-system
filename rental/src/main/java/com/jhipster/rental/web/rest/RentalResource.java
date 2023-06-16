@@ -1,5 +1,6 @@
 package com.jhipster.rental.web.rest;
 
+import com.jhipster.rental.adaptor.BookClient;
 import com.jhipster.rental.domain.Rental;
 import com.jhipster.rental.repository.RentalRepository;
 import com.jhipster.rental.service.RentalService;
@@ -46,10 +47,13 @@ public class RentalResource {
 
     private final RentalMapper rentalMapper;
 
-    public RentalResource(RentalService rentalService, RentalRepository rentalRepository, RentalMapper rentalMapper) {
+    private final BookClient bookClient;
+
+    public RentalResource(RentalService rentalService, RentalRepository rentalRepository, RentalMapper rentalMapper, BookClient bookClient) {
         this.rentalService = rentalService;
         this.rentalRepository = rentalRepository;
         this.rentalMapper = rentalMapper;
+        this.bookClient = bookClient;
     }
 
     /**
