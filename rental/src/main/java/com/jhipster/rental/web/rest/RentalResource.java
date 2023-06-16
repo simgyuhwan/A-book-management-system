@@ -5,6 +5,7 @@ import com.jhipster.rental.repository.RentalRepository;
 import com.jhipster.rental.service.RentalService;
 import com.jhipster.rental.service.dto.RentalDTO;
 import com.jhipster.rental.service.mapper.RentalMapper;
+import com.jhipster.rental.web.rest.dto.BookInfoDTO;
 import com.jhipster.rental.web.rest.errors.BadRequestAlertException;
 import java.net.URI;
 import java.net.URISyntaxException;
