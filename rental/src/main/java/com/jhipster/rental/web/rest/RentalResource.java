@@ -1,6 +1,6 @@
 package com.jhipster.rental.web.rest;
 
-import com.jhipster.rental.adaptor.BookClient;
+import com.jhipster.rental.domain.event.BookClient;
 import com.jhipster.rental.domain.Rental;
 import com.jhipster.rental.repository.RentalRepository;
 import com.jhipster.rental.service.RentalService;
@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;

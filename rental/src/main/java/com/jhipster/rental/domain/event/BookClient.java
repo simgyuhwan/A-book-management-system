@@ -1,4 +1,4 @@
-package com.jhipster.rental.adaptor;
+package com.jhipster.rental.domain.event;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;

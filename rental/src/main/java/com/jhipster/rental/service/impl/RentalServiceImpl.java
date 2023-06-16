@@ -1,5 +1,6 @@
 package com.jhipster.rental.service.impl;
 
+import com.jhipster.rental.adaptor.RentalProducer;
 import com.jhipster.rental.domain.Rental;
 import com.jhipster.rental.repository.RentalRepository;
 import com.jhipster.rental.service.RentalService;
@@ -26,9 +27,12 @@ public class RentalServiceImpl implements RentalService {
 
     private final RentalMapper rentalMapper;
 
-    public RentalServiceImpl(RentalRepository rentalRepository, RentalMapper rentalMapper) {
+    private final RentalProducer rentalProducer;
+
+    public RentalServiceImpl(RentalRepository rentalRepository, RentalMapper rentalMapper, RentalProducer rentalProducer) {
         this.rentalRepository = rentalRepository;
         this.rentalMapper = rentalMapper;
+        this.rentalProducer = rentalProducer;
     }
 
     /**
@@ -45,10 +49,10 @@ public class RentalServiceImpl implements RentalService {
         rentalProducer.updateBookStatus(bookId, "UNAVAILABLE");
 
         // 도서 카탈로그 서비스에 대출된 도서로 상태를 변경하기 위한 이벤트 발송
-        rentalProducer.updateBookCatalog(bookId, "RENT_BOOK");
+        rentalProducer.updateBookCatalogStatus(bookId, "RENT_BOOK");
 
         // 대출로 인한 사용자 포인트 적립을 위해 사용자 서비스에 이벤트 발송
-        rentalProducer.savePoints(userId);
+        rentalProducer.savePoints(userId, 1000);
 
         return rental;
     }
@@ -63,10 +67,10 @@ public class RentalServiceImpl implements RentalService {
         rentalRepository.save(rental);
 
         // 도서 서비스에 도서재고 증가를 위해 도서반납 이벤트 발송
-        retenProducer.updateBookStatus(bookId, "AVAILABLE");
+        rentalProducer.updateBookStatus(bookId, "AVAILABLE");
 
         // 도서 카탈로그 서비스에 대출 가능한 도서로 상태를 변경하기 위한 이벤트 발송
-        rentalProducer.updateBookCatalog(bookId, "RETURN_BOOK");
+        rentalProducer.updateBookCatalogStatus(bookId, "RETURN_BOOK");
 
         return rental;
     }
