@@ -1,8 +1,10 @@
 package com.jhipster.rental.web.rest;
 
+import com.jhipster.rental.domain.Rental;
 import com.jhipster.rental.repository.RentalRepository;
 import com.jhipster.rental.service.RentalService;
 import com.jhipster.rental.service.dto.RentalDTO;
+import com.jhipster.rental.service.mapper.RentalMapper;
 import com.jhipster.rental.web.rest.errors.BadRequestAlertException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,9 +43,12 @@ public class RentalResource {
 
     private final RentalRepository rentalRepository;
 
-    public RentalResource(RentalService rentalService, RentalRepository rentalRepository) {
+    private final RentalMapper rentalMapper;
+
+    public RentalResource(RentalService rentalService, RentalRepository rentalRepository, RentalMapper rentalMapper) {
         this.rentalService = rentalService;
         this.rentalRepository = rentalRepository;
+        this.rentalMapper = rentalMapper;
     }
 
     /**
@@ -56,7 +61,26 @@ public class RentalResource {
     @PostMapping("/rentals/{userid}/RentedItem/{book}")
     public ResponseEntity<RentalDTO> rentBook(@PathVariable("userid") Long userid, @PathVariable("book") Long bookId) {
         // 도서 서비스를 호출해 도서 정보 가져오기
+        ResponseEntity<BookInfoDTO> bookInfoResult = bookClient.findBookInfo(bookId);
+        BookInfoDTO bookInfoDTO = bookInfoResult.getBody();
 
+        Rental rental = rentalService.rentBook(userid, bookInfoDTO.getId(), bookInfoDTO.getTitle());
+        RentalDTO rentalDTO = rentalMapper.toDto(rental);
+        return ResponseEntity.ok(rentalDTO);
+    }
+
+    /**
+     * 도서 반납 API
+     *
+     * @param userid
+     * @param book
+     * @return
+     */
+    @DeleteMapping("/rentals/{userid}/RentedItem/{book}")
+    public ResponseEntity<RentalDTO> returnBook(@PathVariable("userid") Long userid, @PathVariable("book") Long book) {
+        Rental rental = rentalService.returnBooks(userid, book);
+        RentalDTO rentalDTO = rentalMapper.toDto(rental);
+        return ResponseEntity.ok(rentalDTO);
     }
 
     /**
