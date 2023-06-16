@@ -1,8 +1,11 @@
 package com.jhipster.rental.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jhipster.rental.domain.Rental;
 import com.jhipster.rental.service.dto.RentalDTO;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -19,7 +22,10 @@ public interface RentalService {
      * @param bookTitle 책 제목
      * @return 대출 도메인 객체
      */
-    Rental rentBook(Long userId, Long bookId, String bookTitle);
+    Rental rentBook(Long userId, Long bookId, String bookTitle) throws
+        ExecutionException,
+        InterruptedException,
+        JsonProcessingException;
 
     /**
      * 도서 반납
@@ -28,7 +34,33 @@ public interface RentalService {
      * @param bookId 책 일련번호
      * @return 대출 도메인 객체
      */
-    Rental returnBooks(Long userId, Long bookId);
+    Rental returnBooks(Long userId, Long bookId) throws
+        ExecutionException,
+        InterruptedException,
+        JsonProcessingException;
+
+    /**
+     * 연체 처리
+     *
+     * @param rentalId
+     * @param bookId
+     * @return
+     */
+    Long beOverdueBook(Long rentalId, Long bookId);
+
+    /**
+     * 연체아이템 반납 처리
+     *
+     * @param userid
+     * @param book
+     * @return
+     */
+    Rental returnOverdueBook(Long userid, Long book) throws
+        ExecutionException,
+        InterruptedException,
+        JsonProcessingException;
+
+    Rental releaseOverdue(Long userId);
 
     /**
      * Save a rental.

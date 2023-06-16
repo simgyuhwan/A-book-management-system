@@ -1,18 +1,22 @@
 package com.jhipster.rental.web.rest;
 
-import com.jhipster.rental.domain.event.BookClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.jhipster.rental.adaptor.BookClient;
 import com.jhipster.rental.domain.Rental;
 import com.jhipster.rental.repository.RentalRepository;
 import com.jhipster.rental.service.RentalService;
 import com.jhipster.rental.service.dto.RentalDTO;
 import com.jhipster.rental.service.mapper.RentalMapper;
 import com.jhipster.rental.web.rest.dto.BookInfoDTO;
+import com.jhipster.rental.web.rest.dto.LateFeeDto;
 import com.jhipster.rental.web.rest.errors.BadRequestAlertException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +26,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import feign.FeignException;
 import tech.jhipster.web.util.HeaderUtil;
 import tech.jhipster.web.util.PaginationUtil;
 import tech.jhipster.web.util.ResponseUtil;
@@ -63,7 +69,10 @@ public class RentalResource {
      * @return
      */
     @PostMapping("/rentals/{userid}/RentedItem/{book}")
-    public ResponseEntity<RentalDTO> rentBook(@PathVariable("userid") Long userid, @PathVariable("book") Long bookId) {
+    public ResponseEntity<RentalDTO> rentBook(@PathVariable("userid") Long userid, @PathVariable("book") Long bookId) throws
+        ExecutionException,
+        InterruptedException,
+        JsonProcessingException {
         // 도서 서비스를 호출해 도서 정보 가져오기
         ResponseEntity<BookInfoDTO> bookInfoResult = bookClient.findBookInfo(bookId);
         BookInfoDTO bookInfoDTO = bookInfoResult.getBody();
@@ -81,9 +90,34 @@ public class RentalResource {
      * @return
      */
     @DeleteMapping("/rentals/{userid}/RentedItem/{book}")
-    public ResponseEntity<RentalDTO> returnBook(@PathVariable("userid") Long userid, @PathVariable("book") Long book) {
+    public ResponseEntity<RentalDTO> returnBook(@PathVariable("userid") Long userid, @PathVariable("book") Long book) throws
+        ExecutionException,
+        InterruptedException,
+        JsonProcessingException {
         Rental rental = rentalService.returnBooks(userid, book);
         RentalDTO rentalDTO = rentalMapper.toDto(rental);
+        return ResponseEntity.ok(rentalDTO);
+    }
+
+    /**
+     * 대출 불가 해제 API
+     *
+     * @param userId
+     * @return
+     */
+    @PutMapping("/rentals/release-overdue/user/{userId}")
+    public ResponseEntity releaseOverdue(@PathVariable("userId") Long userId) {
+        LateFeeDto lateFeeDto = new LateFeeDto();
+        lateFeeDto.setUserId(userId);
+        lateFeeDto.setLateFee(rentalService.findLateFee(userId));
+
+        try {
+            userClient.usePoint(lateFeeDto);
+        } catch (FeignException.FeignClientException e) {
+            e.printStackTrace();
+        }
+
+        RentalDTO rentalDTO = rentalMapper.toDto(rentalService.releaseOverdue(userId));
         return ResponseEntity.ok(rentalDTO);
     }
 

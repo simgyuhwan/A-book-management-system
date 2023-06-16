@@ -13,11 +13,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * 연체아이템
  */
 @Entity
+@Getter
+@Setter
 @Table(name = "overdue_item")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class OverdueItem {
@@ -52,5 +57,14 @@ public class OverdueItem {
 
     public OverdueItem() {}
 
+    public OverdueItem(Long bookId, String bookTitle, LocalDate dueDate) {
+        this.bookId = bookId;
+        this.dueDate = dueDate;
+        this.bookTitle = bookTitle;
+    }
 
+    public static OverdueItem createOverdueItem(Long bookId, String bookTitle, LocalDate dueDate) {
+        return new OverdueItem(bookId, bookTitle, dueDate);
+
+    }
 }

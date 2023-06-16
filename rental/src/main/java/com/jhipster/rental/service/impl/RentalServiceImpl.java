@@ -1,5 +1,6 @@
 package com.jhipster.rental.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jhipster.rental.adaptor.RentalProducer;
 import com.jhipster.rental.domain.Rental;
 import com.jhipster.rental.repository.RentalRepository;
@@ -7,6 +8,8 @@ import com.jhipster.rental.service.RentalService;
 import com.jhipster.rental.service.dto.RentalDTO;
 import com.jhipster.rental.service.mapper.RentalMapper;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -39,7 +42,10 @@ public class RentalServiceImpl implements RentalService {
      * 도서 대출 처리 구현
      */
     @Override
-    public Rental rentBook(Long userId, Long bookId, String bookTitle) {
+    public Rental rentBook(Long userId, Long bookId, String bookTitle) throws
+        ExecutionException,
+        InterruptedException,
+        JsonProcessingException {
         Rental rental = rentalRepository.findByUserId(userId).get();
         rental.checkRentalAvailable(); // 대출 가능 상태 확인
         rental = rental.rentBook(bookId, bookTitle); // Rental 에 대출처리 위임
@@ -61,7 +67,10 @@ public class RentalServiceImpl implements RentalService {
      * 도서 반납 구현
      */
     @Override
-    public Rental returnBooks(Long userId, Long bookId) {
+    public Rental returnBooks(Long userId, Long bookId) throws
+        ExecutionException,
+        InterruptedException,
+        JsonProcessingException {
         Rental rental = rentalRepository.findByUserId(userId).get();
         rental = rental.returnBook(bookId);
         rentalRepository.save(rental);
@@ -73,6 +82,41 @@ public class RentalServiceImpl implements RentalService {
         rentalProducer.updateBookCatalogStatus(bookId, "RETURN_BOOK");
 
         return rental;
+    }
+
+    /**
+     * 연체 처리
+     */
+    @Override
+    public Long beOverdueBook(Long rentalId, Long bookId) {
+        Rental rental = rentalRepository.findById(rentalId).get();
+        rental = rental.overdueBook(bookId);
+        rental.makeRentUnable();
+        rentalRepository.save(rental);
+        return bookId;
+    }
+
+    /**
+     * 연체아이템 반납 처리
+     */
+    @Override
+    public Rental returnOverdueBook(Long userid, Long book) throws
+        ExecutionException,
+        InterruptedException,
+        JsonProcessingException {
+        Rental rental = rentalRepository.findByUserId(userid).get();
+        rental = rental.returnOverdueBook(book);
+        rentalProducer.updateBookStatus(book, "AVAILABLE");
+        rentalProducer.updateBookCatalogStatus(book, "RETURN_BOOK");
+        return rentalRepository.save(rental);
+    }
+
+    // 대출 불가 해제 처리
+    @Override
+    public Rental releaseOverdue(Long userId) {
+        Rental rental = rentalRepository.findByUserId(userId).get();
+        rental = rental.releaseOverdue();
+        return rentalRepository.save(rental);
     }
 
     @Override
